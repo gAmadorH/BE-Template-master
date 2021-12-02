@@ -1,0 +1,4 @@
+require('should');
+
+exports.mochaHooks = {
+};
