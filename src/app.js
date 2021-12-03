@@ -148,4 +148,34 @@ app.post('/balances/deposit/:userId', async (req, res) => {
   }
 });
 
+app.get('/admin/best-profession', async (req, res) => {
+  const { Contract, Job, Profile } = req.app.get('models');
+
+  const profiles = await Profile.findAll({
+    group: ['Profile.profession'],
+    attributes: ['profession'],
+    order: sequelize.literal('`Contractor.total` DESC'),
+    where: {
+      type: 'contractor',
+    },
+    include: {
+      model: Contract,
+      as: 'Contractor',
+      attributes: [[sequelize.fn('sum', sequelize.col('price')), 'total']],
+      group: ['Contractor.id'],
+      include: {
+        model: Job,
+        where: {
+          paid: true,
+        },
+      },
+    },
+  });
+
+  const [profile] = profiles;
+  const { profession } = profile;
+
+  res.json({ profession });
+});
+
 module.exports = app;
