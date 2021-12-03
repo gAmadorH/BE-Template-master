@@ -11,16 +11,20 @@ app.set('models', sequelize.models);
 
 app.get('/contracts/:id', getProfile, async (req, res) => {
   const { Contract } = req.app.get('models');
-  const { id } = req.params;
   const { profile } = req;
+  const { id } = req.params;
+
   const contract = await Contract.findOne({ where: { id, [profile.type === 'client' ? 'ClientId' : 'ContractorId']: profile.id } });
+
   if (!contract) return res.status(404).end();
+
   res.json(contract);
 });
 
 app.get('/contracts/', getProfile, async (req, res) => {
   const { Contract } = req.app.get('models');
   const { profile } = req;
+
   const contracts = await Contract.findAll({
     where: {
       status: {
@@ -36,6 +40,7 @@ app.get('/contracts/', getProfile, async (req, res) => {
 app.get('/jobs/unpaid', getProfile, async (req, res) => {
   const { Contract, Job } = req.app.get('models');
   const { profile } = req;
+
   const contracts = await Contract.findAll({
     where: {
       status: 'in_progress',
@@ -59,8 +64,9 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
 
 app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
   const { Contract, Job, Profile } = req.app.get('models');
-  const { profile, params } = req;
-  const { job_id: jobId } = params;
+  const { job_id: jobId } = req.params;
+  const { profile } = req;
+
   const contracts = await Contract.findAll({
     where: {
       status: 'in_progress',
@@ -108,8 +114,9 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
 
 app.post('/balances/deposit/:userId', async (req, res) => {
   const { Profile, Contract, Job } = req.app.get('models');
-  const { userId } = req.params;
   const { deposit } = req.body;
+  const { userId } = req.params;
+
   const contracts = await Contract.findAll({
     where: {
       status: 'in_progress',
@@ -193,8 +200,7 @@ app.get('/admin/best-profession', async (req, res) => {
 
 app.get('/admin/best-clients', async (req, res) => {
   const { Contract, Job, Profile } = req.app.get('models');
-  const { limit = 2 } = req.query;
-  const { start, end } = req.query;
+  const { start, end, limit = 2 } = req.query;
 
   const jobQuery = {
     paid: true,
