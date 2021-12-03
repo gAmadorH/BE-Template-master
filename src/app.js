@@ -150,6 +150,25 @@ app.post('/balances/deposit/:userId', async (req, res) => {
 
 app.get('/admin/best-profession', async (req, res) => {
   const { Contract, Job, Profile } = req.app.get('models');
+  const { start, end } = req.query;
+
+  const jobQuery = {
+    paid: true,
+  };
+
+  if (start && end) {
+    jobQuery.paymentDate = {
+      [Op.between]: [start, end],
+    };
+  } else if (start) {
+    jobQuery.paymentDate = {
+      [Op.gte]: start,
+    };
+  } else if (end) {
+    jobQuery.paymentDate = {
+      [Op.lte]: end,
+    };
+  }
 
   const profiles = await Profile.findAll({
     group: ['Profile.profession'],
@@ -165,9 +184,7 @@ app.get('/admin/best-profession', async (req, res) => {
       group: ['Contractor.id'],
       include: {
         model: Job,
-        where: {
-          paid: true,
-        },
+        where: jobQuery,
       },
     },
   });
