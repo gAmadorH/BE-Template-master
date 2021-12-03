@@ -25,7 +25,7 @@ app.get('/contracts/:id', getProfile, async (req, res) => {
 app.get('/contracts/', getProfile, async (req, res) => {
   const { Contract } = req.app.get('models');
   const { profile } = req;
-  const contract = await Contract.findAll({
+  const contracts = await Contract.findAll({
     where: {
       status: {
         [Op.not]: 'terminated',
@@ -33,8 +33,32 @@ app.get('/contracts/', getProfile, async (req, res) => {
       [profile.type === 'client' ? 'ClientId' : 'ContractorId']: profile.id,
     },
   });
-  if (!contract) return res.status(404).end();
-  res.json(contract);
+
+  res.json(contracts);
+});
+
+app.get('/jobs/unpaid', getProfile, async (req, res) => {
+  const { Contract, Job } = req.app.get('models');
+  const { profile } = req;
+  const contracts = await Contract.findAll({
+    where: {
+      status: 'in_progress',
+      [profile.type === 'client' ? 'ClientId' : 'ContractorId']: profile.id,
+    },
+    include: {
+      model: Job,
+      where: {
+        paid: {
+          [Op.not]: true,
+        },
+      },
+    },
+
+  });
+
+  const jobs = contracts.map((contract) => contract.Jobs).flat();
+
+  res.json(jobs);
 });
 
 module.exports = app;
