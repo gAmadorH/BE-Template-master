@@ -178,4 +178,55 @@ app.get('/admin/best-profession', async (req, res) => {
   res.json({ profession });
 });
 
+app.get('/admin/best-clients', async (req, res) => {
+  const { Contract, Job, Profile } = req.app.get('models');
+
+  const profiles = await Profile.findAll({
+    where: {
+      type: 'client',
+    },
+    include: {
+      model: Contract,
+      as: 'Client',
+      include: {
+        model: Job,
+        where: {
+          paid: true,
+        },
+        limit: 1,
+        order: [['price', 'DESC']],
+      },
+    },
+  });
+
+  let profilesSort = profiles.map((profile) => {
+    // eslint-disable-next-line prefer-spread
+    const maxPrice = Math.max.apply(Math, profile.Client.map((client) => {
+      const { Jobs: [job = {}] = [] } = client;
+      const { price = 0 } = job;
+
+      return price;
+    }));
+
+    return {
+      id: profile.id,
+      fullName: `${profile.firstName} ${profile.lastName}`,
+      paid: maxPrice,
+    };
+  });
+
+  profilesSort = profilesSort.sort((a, b) => {
+    if (a.paid > b.paid) {
+      return -1;
+    }
+    if (a.paid < b.paid) {
+      return 1;
+    }
+
+    return 0;
+  });
+
+  res.json(profilesSort);
+});
+
 module.exports = app;
