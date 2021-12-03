@@ -61,4 +61,53 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
   res.json(jobs);
 });
 
+app.get('/jobs/:job_id/pay', getProfile, async (req, res) => {
+  const { Contract, Job, Profile } = req.app.get('models');
+  const { profile, params } = req;
+  const { job_id: jobId } = params;
+  const contracts = await Contract.findAll({
+    where: {
+      status: 'in_progress',
+      [profile.type === 'client' ? 'ClientId' : 'ContractorId']: profile.id,
+    },
+    include: [{
+      model: Job,
+      where: {
+        id: jobId,
+        paid: {
+          [Op.not]: true,
+        },
+      },
+    }, {
+      model: Profile,
+      as: 'Client',
+    }],
+
+  });
+
+  const [contractWithJob = {}] = contracts.filter((contract) => contract.Jobs.length > 0);
+  const { Jobs: [job] = [], Client: client } = contractWithJob;
+
+  if (!job) return res.status(404).end();
+
+  if (profile.balance >= job.price) {
+    await Profile.update(
+      { balance: profile.balance - job.price },
+      { where: { id: profile.id } },
+    );
+    await Profile.update(
+      { balance: client.balance + job.price },
+      { where: { id: client.id } },
+    );
+    await Job.update(
+      { paid: true, paymentDate: new Date() },
+      { where: { id: job.id } },
+    );
+  } else {
+    return res.status(404).end();
+  }
+
+  res.json({});
+});
+
 module.exports = app;
