@@ -61,7 +61,7 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
   res.json(jobs);
 });
 
-app.get('/jobs/:job_id/pay', getProfile, async (req, res) => {
+app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
   const { Contract, Job, Profile } = req.app.get('models');
   const { profile, params } = req;
   const { job_id: jobId } = params;
@@ -108,6 +108,44 @@ app.get('/jobs/:job_id/pay', getProfile, async (req, res) => {
   }
 
   res.json({});
+});
+
+app.post('/balances/deposit/:userId', async (req, res) => {
+  const { Profile, Contract, Job } = req.app.get('models');
+  const { userId } = req.params;
+  const { deposit } = req.body;
+  const contracts = await Contract.findAll({
+    where: {
+      status: 'in_progress',
+      ClientId: userId,
+    },
+    include: [{
+      model: Job,
+      where: {
+        paid: {
+          [Op.not]: true,
+        },
+      },
+    }, {
+      model: Profile,
+      as: 'Client',
+    }],
+  });
+
+  const jobs = contracts.map((contract) => contract.Jobs).flat();
+  const total = jobs.reduce((acc, job) => acc + job.price, 0);
+
+  if (total * 0.25 >= deposit) {
+    const client = contracts[0].Client;
+    await Profile.update(
+      { balance: client.balance + deposit },
+      { where: { id: userId, type: 'client' } },
+    );
+
+    res.json({});
+  } else {
+    return res.status(404).end();
+  }
 });
 
 module.exports = app;
