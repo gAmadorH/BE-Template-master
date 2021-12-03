@@ -197,6 +197,26 @@ app.get('/admin/best-profession', async (req, res) => {
 
 app.get('/admin/best-clients', async (req, res) => {
   const { Contract, Job, Profile } = req.app.get('models');
+  const { limit = 2 } = req.query;
+  const { start, end } = req.query;
+
+  const jobQuery = {
+    paid: true,
+  };
+
+  if (start && end) {
+    jobQuery.paymentDate = {
+      [Op.between]: [start, end],
+    };
+  } else if (start) {
+    jobQuery.paymentDate = {
+      [Op.gte]: start,
+    };
+  } else if (end) {
+    jobQuery.paymentDate = {
+      [Op.lte]: end,
+    };
+  }
 
   const profiles = await Profile.findAll({
     where: {
@@ -207,9 +227,7 @@ app.get('/admin/best-clients', async (req, res) => {
       as: 'Client',
       include: {
         model: Job,
-        where: {
-          paid: true,
-        },
+        where: jobQuery,
         limit: 1,
         order: [['price', 'DESC']],
       },
@@ -243,7 +261,7 @@ app.get('/admin/best-clients', async (req, res) => {
     return 0;
   });
 
-  res.json(profilesSort);
+  res.json(profilesSort.slice(0, limit));
 });
 
 module.exports = app;
