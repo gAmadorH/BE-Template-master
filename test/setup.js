@@ -19,6 +19,7 @@ exports.mochaHooks = {
     factory.setAdapter(factoryAdapter);
 
     global.faker = faker;
+    global.models = models;
     global.moment = moment;
     global.request = request;
     global.server = http.createServer(app);

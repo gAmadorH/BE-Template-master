@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-await-in-loop */
-describe.only('task 3: GET /jobs/unpaid', () => {
+describe('task 3: GET /jobs/unpaid', () => {
   it('should Get all unpaid jobs for profile only for active contracts', async () => {
     const profile = await global.factory.create('profile');
 

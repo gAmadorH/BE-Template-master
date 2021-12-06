@@ -70,7 +70,7 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
   const contracts = await Contract.findAll({
     where: {
       status: 'in_progress',
-      [profile.type === 'client' ? 'ClientId' : 'ContractorId']: profile.id,
+      ClientId: profile.id,
     },
     include: [{
       model: Job,
@@ -82,13 +82,13 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
       },
     }, {
       model: Profile,
-      as: 'Client',
+      as: 'Contractor',
     }],
 
   });
 
   const [contractWithJob = {}] = contracts.filter((contract) => contract.Jobs.length > 0);
-  const { Jobs: [job] = [], Client: client } = contractWithJob;
+  const { Jobs: [job] = [], Contractor: contractor } = contractWithJob;
 
   if (!job) return res.status(404).end();
 
@@ -98,8 +98,8 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
       { where: { id: profile.id } },
     );
     await Profile.update(
-      { balance: client.balance + job.price },
-      { where: { id: client.id } },
+      { balance: contractor.balance + job.price },
+      { where: { id: contractor.id } },
     );
     await Job.update(
       { paid: true, paymentDate: new Date() },
