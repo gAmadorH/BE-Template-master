@@ -93,18 +93,28 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
   if (!job) return res.status(404).end();
 
   if (profile.balance >= job.price) {
-    await Profile.update(
-      { balance: profile.balance - job.price },
-      { where: { id: profile.id } },
-    );
-    await Profile.update(
-      { balance: contractor.balance + job.price },
-      { where: { id: contractor.id } },
-    );
-    await Job.update(
-      { paid: true, paymentDate: new Date() },
-      { where: { id: job.id } },
-    );
+    const t = await sequelize.transaction();
+
+    try {
+      await Profile.update(
+        { balance: profile.balance - job.price },
+        { where: { id: profile.id }, transaction: t },
+      );
+      await Profile.update(
+        { balance: contractor.balance + job.price },
+        { where: { id: contractor.id }, transaction: t },
+      );
+      await Job.update(
+        { paid: true, paymentDate: new Date() },
+        { where: { id: job.id }, transaction: t },
+      );
+
+      await t.commit();
+    } catch (error) {
+      await t.rollback();
+
+      return res.status(404).end();
+    }
   } else {
     return res.status(404).end();
   }
