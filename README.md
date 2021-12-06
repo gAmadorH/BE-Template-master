@@ -1,6 +1,7 @@
 # DEEL BACKEND TASK
 
 ![test](https://github.com/gAmadorH/BE-Template-master/workflows/test/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/gAmadorH/BE-Template-master/badge.svg?branch=master)](https://coveralls.io/github/gAmadorH/BE-Template-master?branch=master)
 
 💫 Welcome! 🎉
 
