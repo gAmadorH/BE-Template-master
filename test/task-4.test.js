@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable no-await-in-loop */
 describe('task 4: POST /jobs/:job_id/pay', () => {
   it('should pay for a job', async () => {
     const client = await global.factory.create('profile', {
